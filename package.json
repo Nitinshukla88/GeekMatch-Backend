@@ -1,0 +1,15 @@
+{
+  "name": "devtinder-backend",
+  "version": "1.0.0",
+  "description": "devtinder is a dating platform for dating and hangout",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "dev": "nodemon src/app.js"
+  },
+  "author": "Nitin Shukla",
+  "license": "ISC",
+  "dependencies": {
+    "express": "^4.21.2"
+  }
+}
