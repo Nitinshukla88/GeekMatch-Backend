@@ -9,15 +9,6 @@ const User = require("./models/user");
 app.use(express.json());
 
 app.post("/signup", async (req, res) => {
-  console.log(req.body);
-  //   const userData = {
-  //     firstName: "raj",
-  //     lastName: "shrivastava",
-  //     password: 163535,
-  //     age: 13,
-  //   };
-
-  //   const user = new User(userData);
 
   const user = new User(req.body);
 
@@ -69,9 +60,19 @@ app.get("/feed", async (req, res) => {
 
 app.patch("/user", async(req, res) => {
   const userId = req.body.id;
-  const data = req.body
+  const data = req.body;
+  
   try{
-    await User.findByIdAndUpdate(userId, data);
+    const ALLOWED_FIELDS = ["firstName", "lastName", "email", "password","id"];
+    const check_validation = Object.keys(data).every((key)=> ALLOWED_FIELDS.includes(key)) // API Level Validation (very very Imp)
+    
+    if(!check_validation){
+      throw new Error("Provided information is invalid!");
+    }
+    if(data?.firstName.length > 20){
+      throw new Error("Name is too large !");
+    }
+    await User.findByIdAndUpdate(userId, data, {runValidators : true});
     res.send("User is updated successfully!");
   }catch(err){
     res.send("Something went Wrong- "+err.message);
