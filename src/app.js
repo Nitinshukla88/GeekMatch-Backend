@@ -12,7 +12,14 @@ const { validateSignUpData } = require("./utils/validation");
 
 const bcrypt = require("bcrypt");
 
+const cookieParser = require("cookie-parser");
+
+const jwt = require("jsonwebtoken");
+
+const { userAuth } = require("./middlewares/auth")
+
 app.use(express.json());
+app.use(cookieParser());
 
 app.post("/signup", async (req, res) => {
 
@@ -52,6 +59,9 @@ app.post("/login", async(req, res)=> {
 
     const ispasswordValid = await bcrypt.compare(password, user.password);
     if(ispasswordValid){
+
+      const token = jwt.sign({_id : user._id}, "GeekMatch@123")
+      res.cookie("token", token);
       res.send("Login Successfull!!");
     }else{
       throw new Error("Invalid Credentials!");
@@ -61,64 +71,16 @@ app.post("/login", async(req, res)=> {
   }
 })
 
-app.get("/user", async (req, res) => {
-  const userEmailId = req.body.emailId;
-  try {
-    const user = await User.findOne({ email: userEmailId });
-    if (user.length === 0) {
-      res.status(401).send("User does not exist");
-    } else {
-      res.send(user);
-    }
-  } catch (err) {
-    res.send("Something went wrong");
-  }
-});
-
-app.delete("/user", async(req, res) => {
-  const userId = req.body.id;
+app.get("/profile", userAuth, async (req, res) => {   // Now here userAuth only let the request handler run, once the user is authenticated - power of middleware
   try{
-    // const user = await User.findOneAndDelete({ _id : userId }); This and the below method is one and the same
-    await User.findByIdAndDelete(userId);
-    res.send("User deleted successfully");
+    const user = req.user;
+    res.send(user);
   }catch(err){
-    res.status(401).send("Something went wrong!!");
+    res.status(401).send("Error: "+err.message);
   }
+
 })
 
-app.get("/feed", async (req, res) => {
-  try {
-    const users = await User.find({});
-    if (users.length === 0) {
-      res.status(404).send("Something went wrong");
-    } else {
-      res.send(users);
-    }
-  } catch (err) {
-    res.status(401).send("Something went wrong");
-  }
-});
-
-app.patch("/user", async(req, res) => {
-  const userId = req.body.id;
-  const data = req.body;
-  
-  try{
-    const ALLOWED_FIELDS = ["firstName", "lastName", "email", "password","id"];
-    const check_validation = Object.keys(data).every((key)=> ALLOWED_FIELDS.includes(key)) // API Level Validation (very very Imp)
-    
-    if(!check_validation){
-      throw new Error("Provided information is invalid!");
-    }
-    if(data?.firstName.length > 20){
-      throw new Error("Name is too large !");
-    }
-    await User.findByIdAndUpdate(userId, data, {runValidators : true});
-    res.send("User is updated successfully!");
-  }catch(err){
-    res.status(400).send("Something went Wrong- "+err.message);
-  }
-})
 
 connectDB()
   .then(() => {
@@ -130,3 +92,70 @@ connectDB()
   .catch((err) => {
     console.error("Database is not connected !!");
   });
+
+
+  
+
+// ----------------------------------Code for learning------------------------------------------------------
+
+
+
+// app.get("/user", async (req, res) => {
+//   const userEmailId = req.body.emailId;
+//   try {
+//     const user = await User.findOne({ email: userEmailId });
+//     if (user.length === 0) {
+//       res.status(401).send("User does not exist");
+//     } else {
+//       res.send(user);
+//     }
+//   } catch (err) {
+//     res.send("Something went wrong");
+//   }
+// });
+
+// app.delete("/user", async(req, res) => {
+//   const userId = req.body.id;
+//   try{
+//     // const user = await User.findOneAndDelete({ _id : userId }); This and the below method is one and the same
+//     await User.findByIdAndDelete(userId);
+//     res.send("User deleted successfully");
+//   }catch(err){
+//     res.status(401).send("Something went wrong!!");
+//   }
+// })
+
+// app.get("/feed", async (req, res) => {
+//   try {
+//     const users = await User.find({});
+//     if (users.length === 0) {
+//       res.status(404).send("Something went wrong");
+//     } else {
+//       res.send(users);
+//     }
+//   } catch (err) {
+//     res.status(401).send("Something went wrong");
+//   }
+// });
+
+// app.patch("/user", async(req, res) => {
+//   const userId = req.body.id;
+//   const data = req.body;
+  
+//   try{
+//     const ALLOWED_FIELDS = ["firstName", "lastName", "email", "password","id"];
+//     const check_validation = Object.keys(data).every((key)=> ALLOWED_FIELDS.includes(key)) // API Level Validation (very very Imp)
+    
+//     if(!check_validation){
+//       throw new Error("Provided information is invalid!");
+//     }
+//     if(data?.firstName.length > 20){
+//       throw new Error("Name is too large !");
+//     }
+//     await User.findByIdAndUpdate(userId, data, {runValidators : true});
+//     res.send("User is updated successfully!");
+//   }catch(err){
+//     res.status(400).send("Something went Wrong- "+err.message);
+//   }
+// })
+
