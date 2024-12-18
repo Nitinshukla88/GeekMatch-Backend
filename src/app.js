@@ -4,21 +4,62 @@ const app = express();
 
 const connectDB = require("./config/database");
 
+const validator = require("validator");
+
 const User = require("./models/user");
+
+const { validateSignUpData } = require("./utils/validation");
+
+const bcrypt = require("bcrypt");
 
 app.use(express.json());
 
 app.post("/signup", async (req, res) => {
 
-  const user = new User(req.body);
-
   try {
+    validateSignUpData(req); // API level validation before Schema level validation
+
+    const { firstName, lastName, emailId, password } = req.body;
+
+    const passwordHash = await bcrypt.hash(password, 10);
+
+    const user = new User({
+      firstName : firstName,
+      lastName : lastName,
+      email : emailId,
+      password : passwordHash
+      
+    }); // Here Schema level validation is performed !
     await user.save();
     res.send("Data saved successfully!!");
   } catch (err) {
-    res.send("Error in saving the user- " + err.message);
+    res.status(401).send("Error in saving the user- " + err.message);
   }
 });
+
+app.post("/login", async(req, res)=> {
+  try {
+    const {emailId, password} = req.body;
+    if(!validator.isEmail(emailId)){
+      throw new Error("Invalid Credentials!");
+    }
+
+    const user = await User.findOne({ email : emailId});
+
+    if(!user){
+      throw new Error("Invalid Credentials!");
+    }
+
+    const ispasswordValid = await bcrypt.compare(password, user.password);
+    if(ispasswordValid){
+      res.send("Login Successfull!!");
+    }else{
+      throw new Error("Invalid Credentials!");
+    }
+  }catch(err){
+    res.status(400).send("Login Error : "+err.message);
+  }
+})
 
 app.get("/user", async (req, res) => {
   const userEmailId = req.body.emailId;
@@ -75,7 +116,7 @@ app.patch("/user", async(req, res) => {
     await User.findByIdAndUpdate(userId, data, {runValidators : true});
     res.send("User is updated successfully!");
   }catch(err){
-    res.send("Something went Wrong- "+err.message);
+    res.status(400).send("Something went Wrong- "+err.message);
   }
 })
 
