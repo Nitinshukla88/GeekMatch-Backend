@@ -19,6 +19,8 @@ const connectionRequestSchema = new mongoose.Schema({
     }
 }, { timestamps : true })
 
+connectionRequestSchema.index({ fromUserId : 1, toUserId : 1});   // This compound index make the query faster involving fromUserId and toUserId
+
 connectionRequestSchema.pre("save", function (next) {    // "pre" is a middleware attached with connectionModel. Whenever any instance of this Schema is made, pre will be attached with it. Now whenever you try to save any document having this Schema, pre wiil run before it.
     const connectionRequest = this;
     if(connectionRequest.fromUserId.equals(connectionRequest.toUserId)){
