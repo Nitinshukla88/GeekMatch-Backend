@@ -4,82 +4,22 @@ const app = express();
 
 const connectDB = require("./config/database");
 
-const validator = require("validator");
-
-const User = require("./models/user");
-
-const { validateSignUpData } = require("./utils/validation");
-
-const bcrypt = require("bcrypt");
-
 const cookieParser = require("cookie-parser");
 
-const jwt = require("jsonwebtoken");
 
-const { userAuth } = require("./middlewares/auth")
+const userRouter = require("./routes/auth");
+
+const profileRouter = require("./routes/profile");
+
+const requestRouter = require("./routes/requests");
+
 
 app.use(express.json());
 app.use(cookieParser());
 
-app.post("/signup", async (req, res) => {
-
-  try {
-    validateSignUpData(req); // API level validation before Schema level validation
-
-    const { firstName, lastName, emailId, password } = req.body;
-
-    const passwordHash = await bcrypt.hash(password, 10);
-
-    const user = new User({
-      firstName : firstName,
-      lastName : lastName,
-      email : emailId,
-      password : passwordHash
-      
-    }); // Here Schema level validation is performed !
-    await user.save();
-    res.send("Data saved successfully!!");
-  } catch (err) {
-    res.status(401).send("Error in saving the user- " + err.message);
-  }
-});
-
-app.post("/login", async(req, res)=> {
-  try {
-    const {emailId, password} = req.body;
-    if(!validator.isEmail(emailId)){
-      throw new Error("Invalid Credentials!");
-    }
-
-    const user = await User.findOne({ email : emailId});
-
-    if(!user){
-      throw new Error("Invalid Credentials!");
-    }
-
-    const ispasswordValid = await bcrypt.compare(password, user.password);
-    if(ispasswordValid){
-
-      const token = jwt.sign({_id : user._id}, "GeekMatch@123")
-      res.cookie("token", token);
-      res.send("Login Successfull!!");
-    }else{
-      throw new Error("Invalid Credentials!");
-    }
-  }catch(err){
-    res.status(400).send("Login Error : "+err.message);
-  }
-})
-
-app.get("/profile", userAuth, async (req, res) => {   // Now here userAuth only let the request handler run, once the user is authenticated - power of middleware
-  try{
-    const user = req.user;
-    res.send(user);
-  }catch(err){
-    res.status(401).send("Error: "+err.message);
-  }
-
-})
+app.use("/", userRouter);
+app.use("/", profileRouter);
+app.use("/", requestRouter);
 
 
 connectDB()
@@ -94,9 +34,71 @@ connectDB()
   });
 
 
-  
 
 // ----------------------------------Code for learning------------------------------------------------------
+
+
+
+// app.post("/signup", async (req, res) => {
+
+//   try {
+//     validateSignUpData(req); // API level validation before Schema level validation
+
+//     const { firstName, lastName, emailId, password } = req.body;
+
+//     const passwordHash = await bcrypt.hash(password, 10);
+
+//     const user = new User({
+//       firstName : firstName,
+//       lastName : lastName,
+//       email : emailId,
+//       password : passwordHash
+      
+//     }); // Here Schema level validation is performed !
+//     await user.save();
+//     res.send("Data saved successfully!!");
+//   } catch (err) {
+//     res.status(401).send("Error in saving the user- " + err.message);
+//   }
+// });
+
+// app.post("/login", async(req, res)=> {
+//   try {
+//     const {emailId, password} = req.body;
+//     if(!validator.isEmail(emailId)){
+//       throw new Error("Invalid Credentials!");
+//     }
+
+//     const user = await User.findOne({ email : emailId});
+
+//     if(!user){
+//       throw new Error("Invalid Credentials!");
+//     }
+
+//     const ispasswordValid = await user.validatePassword(password); 
+
+//     if(ispasswordValid){
+
+//       const token = await user.getJWT();
+//       res.cookie("token", token, { expires : new Date(Date.now() + 8 * 3600000)}); // This cookie expires after 8 days
+//       res.send("Login Successfull!!");
+//     }else{
+//       throw new Error("Invalid Credentials!");
+//     }
+//   }catch(err){
+//     res.status(400).send("Login Error : "+err.message);
+//   }
+// })
+
+// app.get("/profile", userAuth, async (req, res) => {   // Now here userAuth only let the request handler run, once the user is authenticated - power of middleware
+//   try{
+//     const user = req.user;
+//     res.send(user);
+//   }catch(err){
+//     res.status(401).send("Error: "+err.message);
+//   }
+
+// })
 
 
 
