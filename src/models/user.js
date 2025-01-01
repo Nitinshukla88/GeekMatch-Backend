@@ -39,16 +39,22 @@ const userSchema = new mongoose.Schema({
     }, 
     age : {
         type : Number,
-        min : 18
+        min : 18,
+        default : 21
     }, 
     gender : {
         type : String,
         lowercase : true,
+        default : "male",
         validate(value){
             if(!["male", "female", "others"].includes(value)){
                 throw new Error("Gender data is not valid !");
             }
         }
+    },
+    photo : {
+        type: String,
+        default : "https://static.vecteezy.com/system/resources/thumbnails/000/439/863/small/Basic_Ui__28186_29.jpg"
     },
     about : {
         type : String,

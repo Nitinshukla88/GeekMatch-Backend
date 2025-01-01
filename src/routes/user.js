@@ -7,7 +7,7 @@ const { userAuth } = require("../middlewares/auth");
 const ConnectionRequest = require("../models/connectionrequest");
 const User = require("../models/user");
 
-const USER_DATA_FIELDS = ["firstName", "lastName", "skills"];
+const USER_DATA_FIELDS = ["firstName", "lastName", "skills", "about", "age", "photo", "gender"];
 
 userRouter.get("/user/requests/received", userAuth, async (req, res) => {
   try {
@@ -15,7 +15,7 @@ userRouter.get("/user/requests/received", userAuth, async (req, res) => {
     const matchedRequests = await ConnectionRequest.find({
       toUserId: loggedInUser?._id,
       status: "interested",
-    }).populate("fromUserId", ["firstName", "lastName"]);
+    }).populate("fromUserId", USER_DATA_FIELDS);
     res.json({ message: "Requests fetched successfully", matchedRequests });
   } catch (err) {
     res.status(401).send("Error: " + err.message);

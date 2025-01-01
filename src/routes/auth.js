@@ -28,7 +28,7 @@ authRouter.post("/signup", async (req, res) => {
         
       }); // Here Schema level validation is performed !
       await user.save();
-      res.send("Data saved successfully!!");
+      res.send("Used added successfully!!");
     } catch (err) {
       res.status(401).send("Error in saving the user- " + err.message);
     }
@@ -65,8 +65,8 @@ authRouter.post("/login", async(req, res)=> {
 
 
   authRouter.post("/logout", (req, res) => {
-    res.cookie("token", null, {expires : new Date(Date.now())});
-
+    // res.cookie("token", null, {expires : new Date(Date.now())});
+    res.clearCookie("token");
     res.send("Logout Successfull!!");
   })
 
