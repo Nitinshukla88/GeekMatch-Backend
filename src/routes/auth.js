@@ -17,6 +17,12 @@ authRouter.post("/signup", async (req, res) => {
       validateSignUpData(req); // API level validation before Schema level validation
   
       const { firstName, lastName, emailId, password } = req.body;
+
+      const isUserSignedUp = await User.findOne({ email : emailId});
+  
+      if(isUserSignedUp){
+        throw new Error("User already exist !! Please Login");
+      }
   
       const passwordHash = await bcrypt.hash(password, 10);
   
@@ -27,10 +33,12 @@ authRouter.post("/signup", async (req, res) => {
         password : passwordHash
         
       }); // Here Schema level validation is performed !
-      await user.save();
-      res.send("Used added successfully!!");
+      const savedUser = await user.save();
+      const token = await savedUser.getJWT();
+      res.cookie("token", token, { expires : new Date(Date.now() + 8 * 3600000)}); // This cookie expires after 8 days
+      res.json({message : "Used added successfully!!", data : savedUser});
     } catch (err) {
-      res.status(401).send("Error in saving the user- " + err.message);
+      res.status(401).send("Error- " + err.message);
     }
   });
   
@@ -45,7 +53,7 @@ authRouter.post("/login", async(req, res)=> {
       const user = await User.findOne({ email : emailId});
   
       if(!user){
-        throw new Error("Invalid Credentials!");
+        throw new Error("User does not exist! Please Sign Up");
       }
   
       const ispasswordValid = await user.validatePassword(password); 
