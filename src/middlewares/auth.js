@@ -10,7 +10,7 @@ const userAuth = async(req, res, next) => {       // Here we have used Middlewar
             throw new Error("Token is not valid !!!");
         }
 
-        const decodedData = await jwt.verify(token, "GeekMatch@123");
+        const decodedData = await jwt.verify(token, process.env.JWT_SECRET);
 
         const { _id } = decodedData;
 
