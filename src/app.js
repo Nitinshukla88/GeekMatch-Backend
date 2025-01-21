@@ -17,6 +17,8 @@ const requestRouter = require("./routes/requests");
 
 const userRouter = require("./routes/user");
 
+const paymentRouter = require("./routes/payment");
+
 const cors = require("cors");
 
 app.use(cors({
@@ -30,6 +32,7 @@ app.use("/", authRouter);
 app.use("/", profileRouter);
 app.use("/", requestRouter);
 app.use("/", userRouter);
+app.use("/", paymentRouter);
 
 
 connectDB()
