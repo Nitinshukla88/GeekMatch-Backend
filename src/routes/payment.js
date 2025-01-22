@@ -9,6 +9,9 @@ const Payment = require("../models/payment");
 
 const {membershipPlans} = require("../utils/constants");
 
+const {validateWebhookSignature} = require('razorpay/dist/utils/razorpay-utils');
+const User = require("../models/user");
+
 paymentRouter.post("/payment/create", userAuth, async (req, res) => {
 
   const {membershipType} = req.body;
@@ -45,5 +48,42 @@ paymentRouter.post("/payment/create", userAuth, async (req, res) => {
     res.status(500).json({ message: err.message });
   }
 });
+
+paymentRouter.post("/payment/webhook", async(req, res) => {
+  try{
+
+    const webhookSignature = req.get("X-Razorpay-Signature");
+    const isWebHookValid = validateWebhookSignature(JSON.stringify(req.body), webhookSignature, process.env.RAZORPAY_WEBHOOK_SECRET);
+
+    if(!isWebHookValid) {
+      return res.status(400).json({ message : "payment webhook is not valid !"});
+    }
+
+    const paymentDetails = req.body.payload.payment.entity;
+
+      const payment = await Payment.findOne({ orderId : paymentDetails.order_id });
+
+      payment.status = paymentDetails.status;
+
+      await payment.save();
+
+      const user = User.findOne({ _id : paymentDetails.userId });
+      user.isPremium = true;
+      user.membershipType = payment.notes.membershipType;
+      await user.save();
+
+    // if(req.body.event === "payment.captured"){  // These are certain events which we can utilise to perform some code or action.
+      
+    // }
+
+    // if(req.body.event == "payment.failed"){
+
+    // }
+
+    return res.status(200).json({message : "WebHook recieved successfully!"});
+  }catch(err){
+    res.status(500).json({ message : err.message });
+  }
+})
 
 module.exports = paymentRouter;
