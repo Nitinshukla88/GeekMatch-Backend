@@ -4,6 +4,8 @@ const express = require("express");
 
 const app = express();
 
+const http = require("http");
+
 const connectDB = require("./config/database");
 
 const cookieParser = require("cookie-parser");
@@ -20,6 +22,7 @@ const userRouter = require("./routes/user");
 const paymentRouter = require("./routes/payment");
 
 const cors = require("cors");
+const initializeSocket = require("./utils/socket");
 
 app.use(cors({
   origin : "http://localhost:5173",
@@ -34,11 +37,14 @@ app.use("/", requestRouter);
 app.use("/", userRouter);
 app.use("/", paymentRouter);
 
+const server = http.createServer(app);
+
+initializeSocket(server);
 
 connectDB()
   .then(() => {
     console.log("Database is successfully connected");
-    app.listen(4000, () => {
+    server.listen(4000, () => {
       console.log("Server is listening on port 4000");
     });
   })
