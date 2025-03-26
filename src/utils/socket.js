@@ -9,7 +9,7 @@ const getSecretRoomId = (userId, targetUserId) => {
 const initializeSocket = (server) => {
     const io = socket(server, {
         cors : {
-          origin : "https://geek-match-frontend.vercel.app",
+          origin : ["https://geek-match-frontend.vercel.app","http://localhost:5173"]
         }
       })
       
