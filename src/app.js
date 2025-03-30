@@ -23,9 +23,10 @@ const paymentRouter = require("./routes/payment");
 
 const cors = require("cors");
 const initializeSocket = require("./utils/socket");
+const chatRouter = require("./routes/chat");
 
 app.use(cors({
-  origin: ["https://geek-match-frontend.vercel.app", "http://localhost:5173"],
+  origin: "https://geek-match-frontend.vercel.app",
   credentials: true,
   methods: ["GET", "POST", "PUT", "DELETE"],
   allowedHeaders: ["Content-Type", "Authorization"]
@@ -38,6 +39,7 @@ app.use("/", profileRouter);
 app.use("/", requestRouter);
 app.use("/", userRouter);
 app.use("/", paymentRouter);
+app.use("/", chatRouter);
 
 const server = http.createServer(app);
 
