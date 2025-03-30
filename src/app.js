@@ -28,7 +28,7 @@ const chatRouter = require("./routes/chat");
 app.use(cors({
   origin: "https://geek-match-frontend.vercel.app",
   credentials: true,
-  methods: ["GET", "POST", "PUT", "DELETE"],
+  methods: ["GET", "POST", "PUT", "DELETE", "PATCH"],
   allowedHeaders: ["Content-Type", "Authorization"]
 }));
 app.use(express.json());
