@@ -13,9 +13,11 @@ const initializeSocket = (server) => {
   try {
     const io = socket(server, {
       cors: {
-        origin: "http://localhost:5173",
+        origin: "https://geek-match-frontend.vercel.app",
       },
     });
+
+    const roomUsers = new Map();
 
     io.on("connection", (socket) => {
       // We've got a connection request with the socket as you can see one line just above and now we'll handle events listed below--
@@ -24,6 +26,43 @@ const initializeSocket = (server) => {
         console.log(firstName + " joined the room with room Id : " + roomId);
         socket.join(roomId);
       });
+
+      socket.on("join-room", ({firstName, _id, targetUserId})=>{
+        const roomId = getSecretRoomId(_id, targetUserId);
+        console.log(`${firstName} has joined the video-chat with id ${_id} and targetUserId is ${targetUserId}`)
+        socket.join(roomId);
+        if(!roomUsers.get(roomId)){
+          roomUsers.set(roomId, []);
+        }
+        roomUsers.get(roomId).push({ socketId : socket.id, userId : _id});
+
+        const usersInRoom = roomUsers.get(roomId);
+        if(usersInRoom.length === 2){
+          const existingUser = usersInRoom.find((user)=> user.userId !== _id);
+          io.to(existingUser.socketId).emit("joined-room", { firstName, _id, targetUserId: existingUser.userId }); 
+          console.log(`The joined-room handler is going to sended to ${targetUserId} from ${firstName}`)
+        }
+      })
+
+      socket.on("call-user", ({firstName, _id, targetUserId, offer})=>{
+        console.log(`${firstName} wants to send the offer to targetuserId ${targetUserId} and id of ${firstName} is ${_id}`);
+        const roomId = getSecretRoomId(_id, targetUserId);
+        const usersInRoom = roomUsers.get(roomId) || [];
+        const existingUser = usersInRoom.find((user)=> user.userId !== _id);
+        if(existingUser){
+          io.to(existingUser.socketId).emit("incoming-call", {firstName, offer, _id, targetUserId});
+        }
+      })
+
+      socket.on("call-accepted", ({firstName, _id, targetUserId, answer})=>{
+        console.log(`The call got accepted which was sent by ${firstName} with id ${_id}`);
+        const roomId = getSecretRoomId(_id, targetUserId);
+        const usersInRoom = roomUsers.get(roomId) || [];
+        const existingUser = usersInRoom.find((user)=> user.userId !== targetUserId);
+        if(existingUser){
+          io.to(existingUser.socketId).emit("call-accepted", {firstName, _id, targetUserId, answer});
+        }
+      })
 
       socket.on(
         "sendMessage",
@@ -53,7 +92,17 @@ const initializeSocket = (server) => {
         }
       );
 
-      socket.on("disconnect", () => {});
+      socket.on("disconnect", () => {
+        console.log("A user disconnected:", socket.id);
+        for (const [roomId, users] of roomUsers.entries()) {
+          const updatedUsers = users.filter((user) => user.socketId !== socket.id);
+          if (updatedUsers.length === 0) {
+            roomUsers.delete(roomId);
+          } else {
+            roomUsers.set(roomId, updatedUsers);
+          }
+        }
+      });
     });
   } catch (err) {
     res.json({ message: err.message });
