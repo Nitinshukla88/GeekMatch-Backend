@@ -26,7 +26,8 @@ const initializeSocket = require("./utils/socket");
 const chatRouter = require("./routes/chat");
 
 app.use(cors({
-  origin: "https://geek-match-frontend.vercel.app",
+  // origin: "https://geek-match-frontend.vercel.app",
+  origin: "http://localhost:5173",
   credentials: true,
   methods: ["GET", "POST", "PUT", "DELETE", "PATCH"],
   allowedHeaders: ["Content-Type", "Authorization"]
