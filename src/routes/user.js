@@ -50,6 +50,40 @@ userRouter.get("/user/connections", userAuth, async (req, res) => {
   }
 });
 
+userRouter.delete("/user/connections/remove/:connectionId", userAuth, async(req, res)=> {
+  try {
+      const loggedInUser = req.user;
+      const { connectionId } = req.params;
+    //   console.log(connectionId);
+      
+      //connection request is accepted and involves the logged-in user and connectionId
+      const connectionRequest = await ConnectionRequest.findOne({
+        $or:[
+            {fromUserId:loggedInUser._id,
+             toUserId:connectionId,
+             status:"accepted"},
+             {fromUserId:connectionId,
+             toUserId:loggedInUser._id,
+             status:"accepted"}
+           ]
+      })
+        
+  
+      //console.log(connectionRequest);
+      
+      if (!connectionRequest) {
+        return res.status(400).json({ message: "Invalid requestId or not authorized!" });
+      }
+      
+      //deleting the connection from DB
+      await connectionRequest.deleteOne();
+  
+      res.json({ message: "Connection removed", data: connectionRequest });
+    } catch (err) {
+      res.status(500).send("ERROR: " + err.message);
+    }
+})
+
 userRouter.get("/user/feed", userAuth, async (req, res) => {
   try {
     const loggedInUser = req.user;
