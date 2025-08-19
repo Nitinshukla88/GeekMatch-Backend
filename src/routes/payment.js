@@ -38,6 +38,7 @@ paymentRouter.post("/payment/create", userAuth, async (req, res) => {
       amount: order.amount,
       currency: order.currency,
       notes: order.notes,
+      receipt: order.receipt,
       status: order.status,
     });
 
@@ -72,19 +73,13 @@ paymentRouter.post("/payment/webhook", async (req, res) => {
 
     await payment.save();
 
-    const user = await User.findOne({ _id: payment.userId });
-    console.log(user);
-    user.isPremium = true;
-    user.membershipType = payment.notes.membershipType;
-    await user.save();
-
-    // if(req.body.event === "payment.captured"){  // These are certain events which we can utilise to perform some code or action.
-
-    // }
-
-    // if(req.body.event == "payment.failed"){
-
-    // }
+    if(paymentDetails.status === "captured") {
+      const user = await User.findOne({ _id: payment.userId });
+      console.log(user);
+      user.isPremium = true;
+      user.membershipType = payment.notes.membershipType;
+      await user.save();
+    }
 
     return res.status(200).json({ message: "WebHook recieved successfully!" });
   } catch (err) {
@@ -98,7 +93,7 @@ paymentRouter.get("/premium/verify", userAuth, async (req, res) => {
     if (user.isPremium) {
       return res.json({ isPremium: true, membershipType: user.membershipType });
     }
-    return res.json({ isPremium: false });
+    return res.json({ isPremium: false, membershipType: user.membershipType });
   } catch (err) {
     res.status(400).json({ message: err.message });
   }

@@ -111,7 +111,17 @@ userRouter.get("/user/feed", userAuth, async (req, res) => {
       ],
     }).select(USER_DATA_FIELDS).skip(skip).limit(Limit); // Array.from(<Set>) converts the set into array
 
-    res.json({ data: usersToShow });
+    // Fisher-Yates Shuffle Function
+        function shuffleArray(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]]; // Swap elements
+            }
+            return array;
+        }
+
+        const shuffledUsersToShow = shuffleArray(usersToShow);
+    res.json({ data: shuffledUsersToShow });
   } catch (err) {
     res.status(404).json({ message: err.message });
   }
