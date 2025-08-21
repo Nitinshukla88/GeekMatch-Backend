@@ -10,12 +10,14 @@ chatRouter.get("/chat/:targetUserId", userAuth, async(req, res)=> {
 
     const userId = req.user._id;
 
+    if(req.user.isPremium) {
+
     try{
         let chat = await Chat.findOne({
             participants : {$all : [userId, targetUserId]}
         }).populate({
             path : "messages.senderId",
-            select : "firstName lastName"
+            select : "firstName lastName photo"
         });
         if(!chat){
             chat = new Chat({
@@ -26,7 +28,9 @@ chatRouter.get("/chat/:targetUserId", userAuth, async(req, res)=> {
         }
         res.json(chat);
     }catch(err){
-        res.json({ message : err.message });
+        res.status(500).json({ success : false, message : err.message });
+    } } else {
+        return res.status(403).json({ isPremium: false, message: "You need to be a premium user to access this chat." });
     }
 })
 
