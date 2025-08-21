@@ -1,7 +1,7 @@
 const socket = require("socket.io");
 const crypto = require("crypto");
 const Chat = require("../models/chat");
-const { userAuth } = require("../middlewares/auth")
+const ConnectionRequest = require("../models/connectionrequest");
 
 const getSecretRoomId = (userId, targetUserId) => {
   return crypto
@@ -21,9 +21,15 @@ const initializeSocket = (server) => {
     const roomUsers = new Map();
 
     io.on("connection", (socket) => {
-      socket.on("joinChat", ({ firstName, _id, targetUserId }) => {
-        const roomId = getSecretRoomId(_id, targetUserId);
-        socket.join(roomId);
+      socket.on("joinChat", async ({ _id, targetUserId }) => {
+        try{
+          const roomId = getSecretRoomId(_id, targetUserId);
+          socket.join(roomId);
+        } catch (err) {
+          console.error(err);
+          socket.emit("error", { message: "Failed to join chat." });
+        }
+        
       });
 
       socket.on("join-room", ({firstName, _id, targetUserId})=>{
@@ -61,24 +67,36 @@ const initializeSocket = (server) => {
 
       socket.on(
         "sendMessage",
-        async ({ firstName, _id, targetUserId, chatMessage }) => {
-          const roomId = getSecretRoomId(_id, targetUserId);
+        async ({ firstName, lastName, photo, _id, targetUserId, text, createdAt }) => {
+          try {
+            const roomId = getSecretRoomId(_id, targetUserId);
           let chat = await Chat.findOne({
             participants: { $all: [_id, targetUserId] },
           });
+
+          
           if (!chat) {
             chat = new Chat({
               participants: [_id, targetUserId],
-              messages: [{senderId : _id, text : chatMessage}],
+              messages: [{senderId : _id, text }],
             });
             await chat.save();
           } else {
-            chat.messages.push({ senderId: _id, text: chatMessage });
+            chat.messages.push({ senderId: _id, text });
             await chat.save();
           }
-          io.to(roomId).emit("messageReceived", { firstName, chatMessage });
+          io.to(roomId).emit("messageReceived", {
+            senderId: _id,
+            firstName,
+            lastName,
+            text,
+            createdAt
+          });
+          } catch (err) {
+            console.error("Error sending message:", err);
+            socket.emit("error", { message: "Failed to send message." });
         }
-      );
+      });
 
       socket.on("disconnect", () => {
         console.log("A user disconnected:", socket.id);
